@@ -5,13 +5,17 @@ ssh_dir=${ssh_dir:=$HOME/.ssh}
 # TODO: guard against not having the right public key
 # take
 
-# assuming input from stdin, input from file won't need tempfile
-filename=`mktemp -t pub-crypt`
-cat /dev/stdin > $filename
-# todo: trap and delete file
+if [ $1 ]; then
+  file_to_decrypt=$1
+else
+  # we need to seek into the stream to read the key
+  file_to_decrypt=`mktemp -t pub-crypt`
+  cat /dev/stdin > $file_to_decrypt
+  # todo: trap and delete file
+fi
 
 encrypted_key=`
-  head -n 40 $filename |
+  head -n 40 $file_to_decrypt |
   grep 'K: ' |
   cut -d ' ' -f 2`
 
@@ -20,7 +24,7 @@ decrypted_key=`
   base64 --decode |
   openssl rsautl -decrypt -inkey $ssh_dir/id_rsa`
 
-cat $filename |
+cat $file_to_decrypt |
 grep -v -e "[-:]" |
 base64 --decode |
 openssl enc \

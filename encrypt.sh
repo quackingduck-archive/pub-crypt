@@ -5,11 +5,12 @@
 # TODO: error guards (file presence tests)
 # * rsa public key
 
-ssh_dir=${ssh_dir:=$HOME/.ssh}
+file_to_encrypt=${1:-/dev/stdin}
 
-# TODO: take input file as arg
+# echo $file_to_encrypt
+# exit
 
-ssh_pub_key_file=$ssh_dir/id_rsa.pub
+ssh_pub_key_file=${ssh_dir:-$HOME/.ssh}/id_rsa.pub
 pub_key_file=$ssh_pub_key_file.pkcs8
 
 # Convert the key to PEM format
@@ -22,7 +23,9 @@ email=`cut -d ' ' -f 3 $ssh_pub_key_file`
 echo "-- Public key (RSA, PKCS8 format) for: $email"
 
 base64_pkcs8_public_key=`grep -v \- $pub_key_file`
-for line in $base64_pkcs8_public_key ; do echo "P: $line" ; done
+for line in $base64_pkcs8_public_key ; do
+  echo "P: $line"
+done
 
 hex_encoded_random_key=`head -c 20 /dev/random | xxd -p` # 160 bits (20 bytes)
 
@@ -39,5 +42,6 @@ openssl enc \
   -nosalt \
   -pass pass:$hex_encoded_random_key \
   -e \
-  -in /dev/stdin | base64 --break 67 > /dev/stdout
+  -in $file_to_encrypt | base64 --break 67
+
 echo "-------------------------------------------------------------------"
