@@ -1,0 +1,43 @@
+# read -r -d '' usage <<-'EOF'
+# Usage: pub-crypt [-e or -d] [file]
+#
+# Options:
+#   -e encrypt
+#   -d decrypt
+#
+# Examples:
+#   pub-crypt -e foo.txt > foo.txt.pub-crypt
+#   pub-crypt -d foo.txt.pub-crypt
+#   cat foo.txt | pub-crypt -e > foo.txt.pub-crypt
+#   cat foo.txt.pub-crypt > pub-crypt -d
+# EOF
+
+usage=`cat <<EOF
+Usage: pub-crypt [-e or -d] [file]
+
+Options:
+  -e encrypt
+  -d decrypt
+
+Examples:
+  pub-crypt -e foo.txt > foo.txt.pub-crypt
+  pub-crypt -d foo.txt.pub-crypt
+  cat foo.txt | pub-crypt -e > foo.txt.pub-crypt
+  cat foo.txt.pub-crypt > pub-crypt -d
+EOF
+`
+
+action=$1
+filename=$2
+
+# filename=${2:-/dev/stdin} # todo (I think), go back to this version. Don't
+# make ./decrypt care about stdin vs file
+
+if [ $action ] ; then
+  if   [ $action = '-e' ] ; then ./encrypt.sh $filename
+  elif [ $action = '-d' ] ; then ./decrypt.sh $filename
+  else echo "$usage"
+  fi
+else
+  echo "$usage"
+fi
