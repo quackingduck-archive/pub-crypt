@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Encrypts stdin using the current user's private rsa key.
+# Decrypts stdin using the current user's private rsa key.
 
 # Get the path to the user's public key. `ssh_dir` can be overidden in the
 # calling environment but defaults to ~/.ssh
