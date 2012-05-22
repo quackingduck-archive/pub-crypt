@@ -1,47 +1,52 @@
 #!/bin/bash
 
-# TODO: heavy header doc of process
+# Encrypts stdin using the current user's public rsa key.
 
-# TODO: error guards (file presence tests)
-# * rsa public key
-
-file_to_encrypt=${1:-/dev/stdin}
-
-# echo $file_to_encrypt
-# exit
-
+# Get the path to the user's public key. `ssh_dir` can be overidden in the
+# calling environment but defaults to ~/.ssh
 ssh_pub_key_file=${ssh_dir:-$HOME/.ssh}/id_rsa.pub
-pub_key_file=$ssh_pub_key_file.pkcs8
+# Exit if the user has no public key
+test -f $ssh_pub_key_file ||
+  { echo "error: couldn't find $ssh_pub_key_file" >&2 ; exit 1; }
 
-# Convert the key to PEM format
+# Path to PEM (pkcs8) formatted version of public key
+pub_key_file=$ssh_pub_key_file.pkcs8
+# Create PEM formatted if it doesn't already exits
 test -f $pub_key_file ||
   ssh-keygen -f $ssh_pub_key_file -e -m PKCS8 > $pub_key_file
 
+# Now we write the encypted file in Pub Crypt format to stdout
 echo "-- Generated with Pub Crypt 1.0 -----------------------------------"
 
-email=`cut -d ' ' -f 3 $ssh_pub_key_file`
+# The user's public key
+email=`cut -f 3 -d ' ' $ssh_pub_key_file`
 echo "-- Public key (RSA, PKCS8 format) for: $email"
-
 base64_pkcs8_public_key=`grep -v \- $pub_key_file`
 for line in $base64_pkcs8_public_key ; do
   echo "P: $line"
 done
 
-hex_encoded_random_key=`head -c 20 /dev/random | xxd -p` # 160 bits (20 bytes)
+# 160 bits (20 bytes) of randomness, hex formatted
+hex_encoded_random_key=`head -c 20 /dev/random | xxd -p`
 
+# The random string encrypted with the user's public key
 echo "-- Random key encrypted with public key above"
 base64_encrypted_random_key=`
   echo -n $hex_encoded_random_key |
   openssl rsautl -encrypt -inkey $pub_key_file -pubin |
   base64 --break 64`
-for line in $base64_encrypted_random_key ; do echo "K: $line" ; done
+for line in $base64_encrypted_random_key ; do
+  echo "K: $line"
+done
 
+# And finally we encrypt the stdin stream with that key and print it in
+# base64 (in 67 char newline separated chunks)
 echo "-- Body encrypted (AES-256-CBC) with random key above"
 openssl enc \
   -aes-256-cbc \
   -nosalt \
   -pass pass:$hex_encoded_random_key \
-  -e \
-  -in $file_to_encrypt | base64 --break 67
+  -e |
+base64 --break 67
 
 echo "-------------------------------------------------------------------"

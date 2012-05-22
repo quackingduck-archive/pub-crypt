@@ -1,21 +1,21 @@
 . test/support.sh
 
 msg Encrypting file
-run "./encrypt.sh test/fixtures/lorem.txt > tmp/integration.pub-crypt"
+run "./pub-crypt -e test/fixtures/lorem.txt > tmp/integration.pub-crypt"
 
 msg Decrypting file
-run "./decrypt.sh tmp/integration.pub-crypt > tmp/out.txt"
+run "./pub-crypt -d tmp/integration.pub-crypt > tmp/out.txt"
 
 msg Validating
 run [ $(short_hash test/fixtures/lorem.txt) = $(short_hash tmp/out.txt) ]
 
 msg Encrypting stdin
 run "cat test/fixtures/lorem.txt |
-    ./encrypt.sh > tmp/integration.pub-crypt"
+    ./pub-crypt -e > tmp/integration.pub-crypt"
 
 msg Decrypting stdin
 run "cat tmp/integration.pub-crypt |
-    ./decrypt.sh > tmp/out.txt"
+    ./pub-crypt -d > tmp/out.txt"
 
 msg Validating
 run [ $(short_hash test/fixtures/lorem.txt) = $(short_hash tmp/out.txt) ]

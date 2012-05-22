@@ -1,30 +1,37 @@
 #!/bin/bash
 
-ssh_dir=${ssh_dir:=$HOME/.ssh}
+# Encrypts stdin using the current user's private rsa key.
 
-# TODO: guard against not having the right public key
-# take
+# Get the path to the user's public key. `ssh_dir` can be overidden in the
+# calling environment but defaults to ~/.ssh
+ssh_private_key_file=${ssh_dir:=$HOME/.ssh}/id_rsa
+# Exit if the user has no public key
+test -f $ssh_private_key_file ||
+  { echo "error: couldn't find $ssh_private_key_file" >&2 ; exit 1; }
 
-if [ $1 ]; then
-  file_to_decrypt=$1
-else
-  # we need to seek into the stream to read the key
-  file_to_decrypt=`mktemp -t pub-crypt`
-  cat /dev/stdin > $file_to_decrypt
-  # todo: trap and delete file
-fi
+# Make a tempfile
+header=`mktemp -t pub-crypt`
+# Read a chunk of the stream into a tempfile. I've found that head on OS X
+# seems to read pretty big chunks even when asked for little chunks (and then
+# discards what it doesn't use). Reading 16384 seems to be a large enough
+# chunk that it won't try to read past that. Perhaps sed is can be more
+# precise.
+head -c 16384 > $header
 
+# Extract the base64 encoded key from the header
 encrypted_key=`
-  head -n 40 $file_to_decrypt |
+  head -n 40 $header |
   grep 'K: ' |
   cut -d ' ' -f 2`
 
+# Decrypt the key using the user's private rsa key
 decrypted_key=`
   echo $encrypted_key |
   base64 --decode |
   openssl rsautl -decrypt -inkey $ssh_dir/id_rsa`
 
-cat $file_to_decrypt |
+# And finally concatenate the header to the rest of stdin and decrypt that
+cat $header - |
 grep -v -e "[-:]" |
 base64 --decode |
 openssl enc \

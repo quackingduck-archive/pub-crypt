@@ -19,13 +19,13 @@ function clr {
   local esc='\e' begin='[' end='m'; printf ${esc}${begin}${1:-}${end};
 }
 # Prints string using first arg as color
-function clr-echo {
+function clr_echo {
   local args=("$@"); printf "$(clr $1)${args[@]:1}$(clr)\n"
 }
 
 # Print info
-function msg { echo; clr-echo $gray "$@"; }
+function msg { echo; clr_echo $gray "$@"; }
 # Print command (in blue) then run it
-function run { clr-echo $blue $@ ; eval "$@"; }
+function run { clr_echo $blue $@ ; eval "$@"; }
 # Compute hexdigest of file and print first 7 chars
 function short_hash { echo `shasum $1 | head -c 7`; }
