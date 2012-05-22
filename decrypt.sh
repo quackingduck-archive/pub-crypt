@@ -14,8 +14,7 @@ header=`mktemp -t pub-crypt`
 # Read a chunk of the stream into a tempfile. I've found that head on OS X
 # seems to read pretty big chunks even when asked for little chunks (and then
 # discards what it doesn't use). Reading 16384 seems to be a large enough
-# chunk that it won't try to read past that. Perhaps sed is can be more
-# precise.
+# chunk that it won't try to read past that.
 head -c 16384 > $header
 
 # Extract the base64 encoded key from the header
